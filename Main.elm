@@ -117,13 +117,15 @@ view model =
 viewWorkingMode distractions =
   div []
     [ button [ onClick (GetTimeAndThen Distracted) ] [ text "Distracted" ]
-    , div [] ((Html.h1 [] [text "Distractions"]) :: viewDistractionsList distractions) 
+    , div [] 
+        [ Html.h1 [] [text "Distractions"]
+        , Html.ul [] (List.map viewDistraction distractions)
+        ] 
     ]
 
-viewDistractionsList distractions =
-  case distractions of
-    [] -> [ text "" ]
-    _ -> [ text "Coming soon" ]
+viewDistraction distraction =
+  Html.li []
+    [ text (timeToString distraction.startTime) ]
 
 viewDistractedMode distraction =
   div []
