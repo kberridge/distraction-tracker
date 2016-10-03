@@ -4,8 +4,10 @@ import Html.Events exposing (onClick)
 import Task
 import Time exposing(Time)
 import Date
+import Date.Format
 import Debug
 
+main : Program Never
 main =
   App.program { init = init, view = view, update = update, subscriptions = (\_ -> Sub.none) }
 
@@ -20,6 +22,17 @@ type alias Model =
   { distractions : List Distraction
   }
 
+distractionTypes : List String
+distractionTypes = 
+  [ "Unscheduled Meeting"
+  , "Scheduled Meeting"
+  , "Incoming Bug"
+  , "Design Question"
+  , "Implementation Question"
+  , "Management Question"
+  , "Other"
+  ]
+
 init : (Model, Cmd a)
 init =
   ( { distractions = []
@@ -30,6 +43,7 @@ init =
 type Msg
   = GetTimeAndThen ModelMsg
   | GotTime ModelMsg Time
+  | SelectDistractionType String
 
 type ModelMsg 
   = Distracted
@@ -46,6 +60,21 @@ update msg model =
         (newModel, cmd) = modelUpdate wrappedMsg time model
       in
         (newModel, Cmd.map GetTimeAndThen cmd)
+
+    SelectDistractionType distractionType ->
+      let
+        current =
+          List.head model.distractions
+        updatedCurrent =
+          case current of
+            Nothing -> Nothing
+            Just d -> Just {d | distractionType = Just distractionType}
+        newDistractions =
+          case updatedCurrent of
+            Nothing -> model.distractions
+            Just uped -> uped :: List.drop 1 model.distractions
+      in
+        ({model | distractions = newDistractions}, Cmd.none)
       
 modelUpdate : ModelMsg -> Time -> Model -> (Model, Cmd a)
 modelUpdate msg time model =
@@ -114,6 +143,7 @@ view model =
       DistractedMode distraction ->
         viewDistractedMode distraction
 
+viewWorkingMode : List Distraction -> Html Msg
 viewWorkingMode distractions =
   div []
     [ button [ onClick (GetTimeAndThen Distracted) ] [ text "Distracted" ]
@@ -123,18 +153,43 @@ viewWorkingMode distractions =
         ] 
     ]
 
+viewDistraction : Distraction -> Html Msg
 viewDistraction distraction =
-  Html.li []
-    [ text (timeToString distraction.startTime) ]
+  let
+    typeDisplay = 
+      case distraction.distractionType of
+        Nothing -> ""
+        Just dt -> " - " ++ dt
+  in
+    Html.li []
+      [ text ((timeToString distraction.startTime) ++ typeDisplay) ]
 
+viewDistractedMode : Distraction -> Html Msg
 viewDistractedMode distraction =
   div []
     [ text ("You got distracted at " ++ timeToString distraction.startTime) 
+    , Html.ul [] (List.map (viewDistractionType distraction) distractionTypes)
     , button [ onClick (GetTimeAndThen BackToWork) ] [ text "Back to Work" ]
     ]
 
-timeToString time =
+viewDistractionType : Distraction -> String -> Html Msg
+viewDistractionType distraction distractionType =
   let
-    date = Date.fromTime time
+    currentlySelected =
+      case distraction.distractionType of
+        Nothing ->
+          False
+        Just dt ->
+          distractionType == dt
+    selectedIndicator =
+      if currentlySelected then
+        "[x]"
+      else
+        ""
   in
-    toString date
+    Html.li[]
+      [ Html.a [ onClick (SelectDistractionType distractionType) ] [text (selectedIndicator ++ distractionType)] ]
+
+timeToString : Time -> String
+timeToString time =
+  Date.Format.format "%I:%M%p" (Date.fromTime time)
