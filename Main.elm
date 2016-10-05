@@ -41,11 +41,11 @@ init =
 
 -- UPDATE
 type Msg
-  = GetTimeAndThen ModelMsg
-  | GotTime ModelMsg Time
+  = GetTimeAndThen TimeMsg
+  | GotTime TimeMsg Time
   | SelectDistractionType String
 
-type ModelMsg 
+type TimeMsg 
   = Distracted
   | BackToWork
 
@@ -57,7 +57,7 @@ update msg model =
 
     GotTime wrappedMsg time ->
       let
-        (newModel, cmd) = modelUpdate wrappedMsg time model
+        (newModel, cmd) = timeUpdate wrappedMsg time model
       in
         (newModel, Cmd.map GetTimeAndThen cmd)
 
@@ -76,8 +76,8 @@ update msg model =
       in
         ({model | distractions = newDistractions}, Cmd.none)
       
-modelUpdate : ModelMsg -> Time -> Model -> (Model, Cmd a)
-modelUpdate msg time model =
+timeUpdate : TimeMsg -> Time -> Model -> (Model, Cmd a)
+timeUpdate msg time model =
   case msg of
     Distracted ->
       let 
@@ -159,10 +159,14 @@ viewDistraction distraction =
     typeDisplay = 
       case distraction.distractionType of
         Nothing -> ""
-        Just dt -> " - " ++ dt
+        Just dt -> ": " ++ dt
+    endDisplay =
+      case distraction.endTime of
+        Nothing -> ""
+        Just endDt -> " - " ++ (timeToString endDt)
   in
     Html.li []
-      [ text ((timeToString distraction.startTime) ++ typeDisplay) ]
+      [ text ((timeToString distraction.startTime) ++ endDisplay ++ typeDisplay) ]
 
 viewDistractedMode : Distraction -> Html Msg
 viewDistractedMode distraction =
@@ -188,7 +192,10 @@ viewDistractionType distraction distractionType =
         ""
   in
     Html.li[]
-      [ Html.a [ onClick (SelectDistractionType distractionType) ] [text (selectedIndicator ++ distractionType)] ]
+      [ Html.a 
+        [ onClick (SelectDistractionType distractionType) ] 
+        [ text (selectedIndicator ++ distractionType) ] 
+      ]
 
 timeToString : Time -> String
 timeToString time =
