@@ -1,0 +1,1 @@
+elm-make .\Main.elm --output bin\main.js

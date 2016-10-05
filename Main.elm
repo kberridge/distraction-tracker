@@ -1,3 +1,5 @@
+port module Main exposing (..)
+
 import Html exposing (Html, button, div, text)
 import Html.App as App
 import Html.Events exposing (onClick)
@@ -7,9 +9,9 @@ import Date
 import Date.Format
 import Debug
 
-main : Program Never
+main : Program (Maybe Model)
 main =
-  App.program { init = init, view = view, update = update, subscriptions = (\_ -> Sub.none) }
+  App.programWithFlags { init = init, view = view, update = update, subscriptions = (\_ -> Sub.none) }
 
 -- MODEL
 type alias Distraction =
@@ -33,11 +35,15 @@ distractionTypes =
   , "Other"
   ]
 
-init : (Model, Cmd a)
-init =
-  ( { distractions = []
-    }
-  , Cmd.none)
+init : Maybe Model -> (Model, Cmd a)
+init flags =
+  case flags of
+    Just model -> 
+      (model, Cmd.none)
+    Nothing ->
+      ( { distractions = []
+        }
+      , Cmd.none)
 
 -- UPDATE
 type Msg
@@ -49,6 +55,8 @@ type TimeMsg
   = Distracted
   | BackToWork
 
+port setStorage : Model -> Cmd msg
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -59,7 +67,7 @@ update msg model =
       let
         (newModel, cmd) = timeUpdate wrappedMsg time model
       in
-        (newModel, Cmd.map GetTimeAndThen cmd)
+        (newModel, cmd)
 
     SelectDistractionType distractionType ->
       let
@@ -73,8 +81,10 @@ update msg model =
           case updatedCurrent of
             Nothing -> model.distractions
             Just uped -> uped :: List.drop 1 model.distractions
+        newModel =
+          {model | distractions = newDistractions}
       in
-        ({model | distractions = newDistractions}, Cmd.none)
+        (newModel, setStorage newModel)
       
 timeUpdate : TimeMsg -> Time -> Model -> (Model, Cmd a)
 timeUpdate msg time model =
@@ -84,7 +94,7 @@ timeUpdate msg time model =
         newModel = 
           {model | distractions = (buildDistraction time) :: model.distractions}
       in
-        (newModel, Cmd.none)
+        (newModel, setStorage newModel)
 
     BackToWork ->
       let 
@@ -97,9 +107,11 @@ timeUpdate msg time model =
         newDistractions = 
           case ended of
             Nothing -> model.distractions
-            Just distraction -> distraction :: List.drop 1 model.distractions 
+            Just distraction -> distraction :: List.drop 1 model.distractions
+        newModel =
+          {model | distractions = newDistractions}
       in
-        ({model | distractions = newDistractions}, Cmd.none)
+        (newModel, setStorage newModel)
 
 buildDistraction : Time -> Distraction
 buildDistraction time =

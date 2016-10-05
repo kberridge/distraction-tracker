@@ -1,0 +1,21 @@
+<html>
+
+<head>
+    <title>Elm!</title>
+    <script src="bin\main.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="main.css">
+</head>
+
+<body>
+    <div id="app"></div>
+    <script>
+        const storedState = localStorage.getItem('model')
+        const startingState = storedState ? JSON.parse(storedState) : null
+        const elmApp = Elm.Main.fullscreen(startingState)
+        elmApp.ports.setStorage.subscribe(function (state) {
+          localStorage.setItem('model', JSON.stringify(state))
+        })
+    </script>
+</body>
+
+</html>
