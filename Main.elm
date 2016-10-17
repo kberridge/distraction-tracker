@@ -18,10 +18,12 @@ type alias Distraction =
   { startTime : Time
   , endTime : Maybe Time
   , distractionType : Maybe String
+  , comment : Maybe String
   }
 
 type alias Model = 
   { distractions : List Distraction
+  , version: String
   }
 
 distractionTypes : List String
@@ -42,6 +44,7 @@ init flags =
       (model, Cmd.none)
     Nothing ->
       ( { distractions = []
+        , version = "1"
         }
       , Cmd.none)
 
@@ -50,6 +53,7 @@ type Msg
   = GetTimeAndThen TimeMsg
   | GotTime TimeMsg Time
   | SelectDistractionType String
+  | CommentProvided String
 
 type TimeMsg 
   = Distracted
@@ -77,6 +81,23 @@ update msg model =
           case current of
             Nothing -> Nothing
             Just d -> Just {d | distractionType = Just distractionType}
+        newDistractions =
+          case updatedCurrent of
+            Nothing -> model.distractions
+            Just uped -> uped :: List.drop 1 model.distractions
+        newModel =
+          {model | distractions = newDistractions}
+      in
+        (newModel, setStorage newModel)
+
+    CommentProvided comment ->
+      let
+        current =
+          List.head model.distractions
+        updatedCurrent =
+          case current of
+            Nothing -> Nothing
+            Just d -> Just {d | comment = Just comment}
         newDistractions =
           case updatedCurrent of
             Nothing -> model.distractions
@@ -118,6 +139,7 @@ buildDistraction time =
   { startTime = time
   , endTime = Maybe.Nothing
   , distractionType = Maybe.Nothing
+  , comment = Maybe.Nothing
   }
 
 assertNeverHandler : a -> b
@@ -176,15 +198,23 @@ viewDistraction distraction =
       case distraction.endTime of
         Nothing -> ""
         Just endDt -> " - " ++ (timeToString endDt)
+    commentDisplay =
+      case distraction.comment of
+        Nothing -> ""
+        Just comment -> " " ++ comment
+    
   in
     Html.li []
-      [ text ((timeToString distraction.startTime) ++ endDisplay ++ typeDisplay) ]
+      [ text ((timeToString distraction.startTime) ++ endDisplay ++ " " ++ (timeToDateString distraction.startTime) ++ typeDisplay ++ commentDisplay) ]
 
 viewDistractedMode : Distraction -> Html Msg
 viewDistractedMode distraction =
   div []
     [ text ("You got distracted at " ++ timeToString distraction.startTime) 
     , Html.ul [] (List.map (viewDistractionType distraction) distractionTypes)
+    , Html.div [] 
+      [ Html.input [ Html.Events.onInput CommentProvided ] [] 
+      ]
     , button [ onClick (GetTimeAndThen BackToWork) ] [ text "Back to Work" ]
     ]
 
@@ -212,3 +242,7 @@ viewDistractionType distraction distractionType =
 timeToString : Time -> String
 timeToString time =
   Date.Format.format "%I:%M%p" (Date.fromTime time)
+
+timeToDateString : Time -> String
+timeToDateString time =
+  Date.Format.format "(%a %b %d)" (Date.fromTime time)

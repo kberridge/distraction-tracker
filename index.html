@@ -7,13 +7,20 @@
 </head>
 
 <body>
-    <div id="app"></div>
     <script>
-        const storedState = localStorage.getItem('model')
-        const startingState = storedState ? JSON.parse(storedState) : null
-        const elmApp = Elm.Main.fullscreen(startingState)
+        const storedState = localStorage.getItem('model');
+        startingState = storedState ? JSON.parse(storedState) : null;
+        if (startingState && (!startingState.version || (startingState.version && startingState.version != "1"))) {
+            startingState = null;
+        }
+        try {
+            elmApp = Elm.Main.fullscreen(startingState);
+        }
+        catch (e) {
+            throw "it caught!";
+        }
         elmApp.ports.setStorage.subscribe(function (state) {
-          localStorage.setItem('model', JSON.stringify(state))
+          localStorage.setItem('model', JSON.stringify(state));
         })
     </script>
 </body>
