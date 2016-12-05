@@ -50,18 +50,16 @@ distractionTypes =
     ]
 
 
-init : Maybe Model -> ( Model, Cmd a )
-init flags =
-    case flags of
-        Just model ->
-            ( model, Cmd.none )
+emptyModel : Model
+emptyModel =
+    { distractions = []
+    , version = "1"
+    }
 
-        Nothing ->
-            ( { distractions = []
-              , version = "1"
-              }
-            , Cmd.none
-            )
+
+init : Maybe Model -> ( Model, Cmd Msg )
+init savedModel =
+    Maybe.withDefault emptyModel savedModel ! []
 
 
 
