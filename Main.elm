@@ -88,11 +88,7 @@ update msg model =
             ( model, Task.perform (GotTime wrappedMsg) Time.now )
 
         GotTime wrappedMsg time ->
-            let
-                ( newModel, cmd ) =
-                    timeUpdate wrappedMsg time model
-            in
-                ( newModel, cmd )
+            timeUpdate wrappedMsg time model
 
         SelectDistractionType distractionType ->
             let
