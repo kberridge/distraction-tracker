@@ -87,7 +87,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GetTimeAndThen wrappedMsg ->
-            ( model, Task.perform assertNeverHandler (GotTime wrappedMsg) Time.now )
+            ( model, Task.perform (GotTime wrappedMsg) Time.now )
 
         GotTime wrappedMsg time ->
             let
@@ -193,11 +193,6 @@ buildDistraction time =
     , distractionType = Maybe.Nothing
     , comment = Maybe.Nothing
     }
-
-
-assertNeverHandler : a -> b
-assertNeverHandler =
-    (\_ -> Debug.crash "This should never happen")
 
 
 
