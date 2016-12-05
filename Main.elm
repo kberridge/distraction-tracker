@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
 import Html exposing (Html, button, div, text)
-import Html.App as App
+import Html
 import Html.Events exposing (onClick)
 import Task
 import Time exposing (Time)
@@ -10,9 +10,9 @@ import Date.Format
 import Debug
 
 
-main : Program (Maybe Model)
+main : Program (Maybe Model) Model Msg
 main =
-    App.programWithFlags
+    Html.programWithFlags
         { init = init
         , view = view
         , update = update
